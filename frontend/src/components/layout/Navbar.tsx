@@ -42,6 +42,7 @@ export const Navbar: React.FC<{ onOpenAuth: () => void }> = ({ onOpenAuth }) => 
   };
 
   return (
+    <>
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -310,9 +311,10 @@ export const Navbar: React.FC<{ onOpenAuth: () => void }> = ({ onOpenAuth }) => 
           </div>
         </div>
       </div>
-
-      <SOSModal isOpen={sosOpen} onClose={() => setSosOpen(false)} />
-      <EVAssistanceModal isOpen={assistanceOpen} onClose={() => setAssistanceOpen(false)} />
     </header>
+
+    <SOSModal isOpen={sosOpen} onClose={() => setSosOpen(false)} />
+    <EVAssistanceModal isOpen={assistanceOpen} onClose={() => setAssistanceOpen(false)} />
+    </>
   );
 };

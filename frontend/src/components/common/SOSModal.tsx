@@ -38,7 +38,7 @@ export const SOSModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
     // Outer Backdrop - Clicking outside closes modal
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
     >
       {/* Inner Card Container - Stop propagation so clicking inside won't trigger backdrop close */}
       <div
