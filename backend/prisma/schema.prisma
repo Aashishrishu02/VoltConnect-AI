@@ -335,7 +335,8 @@ model Favorite {
   id        String   @id @default(uuid())
   userId    String
   user      User     @relation("UserFavorites", fields: [userId], references: [id], onDelete: Cascade)
-  chargerId String   @relation(fields: [chargerId], references: [id], onDelete: Cascade)
+  chargerId String
+  charger   Charger  @relation(fields: [chargerId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@unique([userId, chargerId])

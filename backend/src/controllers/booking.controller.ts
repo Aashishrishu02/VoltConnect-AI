@@ -84,7 +84,7 @@ export async function createBooking(req: AuthRequest, res: Response, next: NextF
 
       // Credit host wallet (90% revenue share, 10% platform fee)
       const hostEarnings = Math.round(totalPrice * 0.9 * 100) / 100;
-      const hostWallet = await prisma.wallet.findUnique({ where: { userId: charger.hostId } });
+      const hostWallet = await prisma.wallet.findUnique({ where: { userId: charger.ownerId } });
       if (hostWallet) {
         await prisma.wallet.update({
           where: { id: hostWallet.id },
@@ -128,7 +128,7 @@ export async function createBooking(req: AuthRequest, res: Response, next: NextF
     // Notify Host via WebSocket & DB Notification
     await prisma.notification.create({
       data: {
-        userId: charger.hostId,
+        userId: charger.ownerId,
         title: 'New Booking Confirmed! ⚡',
         message: `Driver booked ${totalHours.toFixed(1)} hours at ${charger.title}`,
         type: 'BOOKING',
@@ -136,7 +136,7 @@ export async function createBooking(req: AuthRequest, res: Response, next: NextF
     });
 
     emitChargerUpdate(chargerId, { isAvailable: false, activeBookingId: booking.id });
-    emitUserNotification(charger.hostId, { title: 'New Booking', message: `New booking at ${charger.title}` });
+    emitUserNotification(charger.ownerId, { title: 'New Booking', message: `New booking at ${charger.title}` });
 
     res.status(201).json(booking);
   } catch (err) {
@@ -151,7 +151,7 @@ export async function getUserBookings(req: AuthRequest, res: Response, next: Nex
       where: { userId },
       include: {
         charger: {
-          select: { title: true, address: true, city: true, images: true, powerKw: true, connectorType: true },
+          select: { title: true, street: true, city: true, photos: true, powerKw: true, connectorType: true },
         },
         payment: true,
         review: true,
@@ -160,6 +160,33 @@ export async function getUserBookings(req: AuthRequest, res: Response, next: Nex
     });
 
     res.json(bookings);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getBookingById(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId;
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        charger: true,
+        payment: true,
+        review: true,
+        user: { select: { name: true, email: true, phone: true } },
+      },
+    });
+
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+
+    if (booking.userId !== userId && booking.charger.ownerId !== userId && !req.user?.roles.includes('ADMIN')) {
+      return res.status(403).json({ error: 'Unauthorized to view this booking.' });
+    }
+
+    res.json(booking);
   } catch (err) {
     next(err);
   }
@@ -222,7 +249,7 @@ export async function cancelBooking(req: AuthRequest, res: Response, next: NextF
 
     if (!booking) return res.status(404).json({ error: 'Booking not found.' });
 
-    if (booking.userId !== userId && req.user?.role !== 'ADMIN') {
+    if (booking.userId !== userId && !req.user?.roles.includes('ADMIN')) {
       return res.status(403).json({ error: 'Unauthorized to cancel this booking.' });
     }
 
@@ -279,7 +306,7 @@ export async function downloadInvoice(req: AuthRequest, res: Response, next: Nex
       userName: booking.user.name,
       userEmail: booking.user.email,
       chargerTitle: booking.charger.title,
-      chargerAddress: `${booking.charger.address}, ${booking.charger.city}`,
+      chargerAddress: `${booking.charger.street}, ${booking.charger.city}`,
       startTime: booking.startTime,
       endTime: booking.endTime,
       totalHours: booking.totalHours,

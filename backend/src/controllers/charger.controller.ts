@@ -227,6 +227,20 @@ export async function rejectCharger(req: AuthRequest, res: Response, next: NextF
   }
 }
 
+export async function updateCharger(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const ownerId = req.user?.userId;
+    const charger = await prisma.charger.updateMany({
+      where: { id, ownerId },
+      data: req.body,
+    });
+    res.json({ message: 'Charger updated successfully', charger });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getOwnerChargers(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const ownerId = req.user?.userId;

@@ -1,11 +1,9 @@
 import { Router } from 'express';
-import { getAIRecommendations, getDynamicPricing, planEVRoute, checkFraud } from '../controllers/ai.controller';
+import { processAIChatQuery, getSmartRecommendations } from '../controllers/ai.controller';
 
 const router = Router();
 
-router.post('/recommend', getAIRecommendations);
-router.get('/pricing/:chargerId', getDynamicPricing);
-router.post('/route-plan', planEVRoute);
-router.post('/fraud-check', checkFraud);
+router.post('/chat-query', processAIChatQuery);
+router.post('/recommendations', getSmartRecommendations);
 
 export default router;
