@@ -1,0 +1,375 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  DRIVER
+  OWNER
+  ADMIN
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_INFORMATION
+  SUSPENDED
+}
+
+enum PropertyType {
+  HOME
+  APARTMENT
+  OFFICE
+  HOTEL
+  RESTAURANT
+  SHOP
+  SOCIETY
+  PARKING_LOT
+  PETROL_PUMP
+  OTHER
+}
+
+enum ChargerType {
+  SLOW_AC
+  FAST_AC
+  DC_FAST
+  RAPID_DC
+  SUPERCHARGER
+}
+
+enum ConnectorType {
+  CCS_2
+  TYPE_2
+  BHARAT_AC001
+  BHARAT_DC001
+  CHADEMO
+  GBT
+}
+
+enum LiveStatus {
+  AVAILABLE
+  CHARGING
+  RESERVED
+  OFFLINE
+  MAINTENANCE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  RAZORPAY
+  UPI
+  WALLET
+  STRIPE
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  PAYMENT
+  REFUND
+  EARNING
+}
+
+enum AssistanceType {
+  TOWING
+  PORTABLE_CHARGER
+  FLAT_TYRE
+  MECHANIC
+  BATTERY_ASSIST
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  phone         String?
+  avatar        String?
+  roles         Role[]         @default([DRIVER])
+  emailVerified Boolean        @default(false)
+  googleId      String?
+  rating        Float          @default(5.0)
+  trustScore    Int            @default(95)
+  greenPoints   Int            @default(250)
+  upiId         String?
+  accountNumber String?
+  ifscCode      String?
+  aadhaarNumber String?
+  panNumber     String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  chargers            Charger[]              @relation("OwnerChargers")
+  bookings            Booking[]              @relation("UserBookings")
+  reviews             Review[]               @relation("UserReviews")
+  favorites           Favorite[]             @relation("UserFavorites")
+  notifications       Notification[]         @relation("UserNotifications")
+  wallet              Wallet?
+  adminLogs           AdminLog[]             @relation("AdminLogs")
+  assistanceRequests  EVAssistanceRequest[]  @relation("UserAssistance")
+  queues              VirtualQueue[]         @relation("UserQueues")
+  rewards             GreenReward[]          @relation("UserRewards")
+
+  @@index([email])
+}
+
+model Charger {
+  id                   String             @id @default(uuid())
+  ownerId              String
+  owner                User               @relation("OwnerChargers", fields: [ownerId], references: [id], onDelete: Cascade)
+  title                String
+  description          String?
+  brand                String?            @default("Tata Power")
+  model                String?            @default("EZ Charge 60kW")
+  propertyType         PropertyType       @default(HOME)
+  status               ApprovalStatus     @default(PENDING)
+  liveStatus           LiveStatus         @default(AVAILABLE)
+  predictedAvailableMin Int               @default(0)
+  aiPriceSuggestion    Float?
+  rejectionReason      String?
+  requestInfoMessage   String?
+
+  houseNumber          String?
+  street               String
+  area                 String?
+  landmark             String?
+  city                 String
+  state                String
+  pinCode              String
+  latitude             Float
+  longitude            Float
+
+  pricingType          String             @default("PER_HOUR")
+  pricePerHour         Float
+  pricePerKwh          Float?             @default(15.0)
+  powerKw              Float              @default(7.2)
+  chargerType          ChargerType        @default(FAST_AC)
+  connectorType        ConnectorType      @default(CCS_2)
+  operates24_7         Boolean            @default(true)
+  isAvailable          Boolean            @default(true)
+  hasParking           Boolean            @default(true)
+  parkingPricePerHour  Float?             @default(30.0)
+
+  amenities            String[]           @default([])
+  photos               String[]           @default([])
+  averageRating        Float              @default(5.0)
+  totalReviews         Int                @default(0)
+
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  availabilitySlots    AvailabilitySlot[]
+  bookings             Booking[]
+  reviews              Review[]
+  favorites            Favorite[]
+  virtualQueues        VirtualQueue[]
+  parkingSlots         ParkingSlot[]
+
+  @@index([latitude, longitude])
+  @@index([city])
+  @@index([status])
+}
+
+model AvailabilitySlot {
+  id        String   @id @default(uuid())
+  chargerId String
+  charger   Charger  @relation(fields: [chargerId], references: [id], onDelete: Cascade)
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isBooked  Boolean  @default(false)
+
+  @@index([chargerId, dayOfWeek])
+}
+
+model Booking {
+  id              String        @id @default(uuid())
+  userId          String
+  user            User          @relation("UserBookings", fields: [userId], references: [id], onDelete: Cascade)
+  chargerId       String
+  charger         Charger       @relation(fields: [chargerId], references: [id], onDelete: Cascade)
+  startTime       DateTime
+  endTime         DateTime
+  totalHours      Float
+  totalPrice      Float
+  includeParking  Boolean       @default(false)
+  parkingPrice    Float         @default(0.0)
+  status          BookingStatus @default(PENDING)
+  qrCode          String?
+  checkInTime     DateTime?
+  checkOutTime    DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  payment         Payment?
+  review          Review?
+
+  @@index([userId])
+  @@index([chargerId])
+  @@index([status])
+}
+
+model VirtualQueue {
+  id               String   @id @default(uuid())
+  chargerId        String
+  charger          Charger  @relation(fields: [chargerId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation("UserQueues", fields: [userId], references: [id], onDelete: Cascade)
+  queuePosition    Int
+  estimatedWaitMin Int      @default(15)
+  status           String   @default("WAITING") // WAITING | SERVED | CANCELLED
+  createdAt        DateTime @default(now())
+}
+
+model EVAssistanceRequest {
+  id            String         @id @default(uuid())
+  userId        String
+  user          User           @relation("UserAssistance", fields: [userId], references: [id], onDelete: Cascade)
+  serviceType   AssistanceType
+  latitude      Float
+  longitude     Float
+  address       String
+  status        String         @default("SEARCHING") // SEARCHING | DISPATCHED | COMPLETED
+  createdAt     DateTime       @default(now())
+}
+
+model GreenReward {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("UserRewards", fields: [userId], references: [id], onDelete: Cascade)
+  points    Int
+  reason    String
+  redeemed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ParkingSlot {
+  id           String   @id @default(uuid())
+  chargerId    String
+  charger      Charger  @relation(fields: [chargerId], references: [id], onDelete: Cascade)
+  slotNumber   String
+  isBooked     Boolean  @default(false)
+  pricePerHour Float    @default(30.0)
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  bookingId     String        @unique
+  booking       Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  userId        String
+  amount        Float
+  currency      String        @default("INR")
+  status        PaymentStatus @default(PENDING)
+  paymentMethod PaymentMethod @default(RAZORPAY)
+  transactionId String?
+  receiptUrl    String?
+  createdAt     DateTime      @default(now())
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Wallet {
+  id           String        @id @default(uuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance      Float         @default(0.0)
+  currency     String        @default("INR")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  transactions Transaction[]
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  walletId    String
+  wallet      Wallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  type        TransactionType
+  amount      Float
+  description String
+  reference   String?
+  createdAt   DateTime        @default(now())
+
+  @@index([walletId])
+}
+
+model Review {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation("UserReviews", fields: [userId], references: [id], onDelete: Cascade)
+  chargerId     String
+  charger       Charger  @relation(fields: [chargerId], references: [id], onDelete: Cascade)
+  bookingId     String   @unique
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  rating        Int
+  cleanliness   Int      @default(5)
+  safety        Int      @default(5)
+  accuracy      Int      @default(5)
+  comment       String
+  createdAt     DateTime @default(now())
+
+  @@index([chargerId])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("UserFavorites", fields: [userId], references: [id], onDelete: Cascade)
+  chargerId String   @relation(fields: [chargerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, chargerId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("INFO")
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Coupon {
+  id             String    @id @default(uuid())
+  code           String    @unique
+  discountPercent Float
+  maxDiscount    Float
+  validUntil     DateTime
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+}
+
+model AdminLog {
+  id             String   @id @default(uuid())
+  adminId        String
+  admin          User     @relation("AdminLogs", fields: [adminId], references: [id], onDelete: Cascade)
+  action         String
+  targetResource String
+  details        String?
+  createdAt      DateTime @default(now())
+}
