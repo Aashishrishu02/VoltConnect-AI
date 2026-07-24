@@ -3,6 +3,7 @@ import { Wallet as WalletIcon, ArrowUpRight, ArrowDownLeft, CreditCard, PlusCirc
 import { QRCodeSVG } from 'qrcode.react';
 import { Wallet, Transaction } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { DigitalCreditCard } from '../components/common/DigitalCreditCard';
 import api from '../services/api';
 
 export const WalletPage: React.FC = () => {
@@ -239,12 +240,19 @@ export const WalletPage: React.FC = () => {
                 {/* CATEGORY 1: CREDIT & DEBIT CARD OPTION */}
                 {payCategory === 'CARD' && (
                   <div className="space-y-3 p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-1">
                       <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
                         <CreditCard className="w-4 h-4 text-emerald-500" /> Enter Card Details
                       </label>
                       <span className="text-[10px] font-extrabold text-emerald-500 uppercase">Visa • Mastercard • RuPay</span>
                     </div>
+
+                    <DigitalCreditCard
+                      cardNumber={cardNumber}
+                      cardExpiry={cardExpiry}
+                      cardName={cardName}
+                      cardCvv={cardCvv}
+                    />
 
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Card Number</label>

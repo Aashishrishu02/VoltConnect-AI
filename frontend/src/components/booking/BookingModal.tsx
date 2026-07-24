@@ -3,6 +3,7 @@ import { Charger } from '../../types';
 import { Zap, Calendar, Clock, CreditCard, Tag, CheckCircle, AlertCircle, X } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { DigitalCreditCard } from '../common/DigitalCreditCard';
 
 interface BookingModalProps {
   charger: Charger;
@@ -71,7 +72,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({ charger, onClose, on
         startTime: start.toISOString(),
         endTime: end.toISOString(),
         paymentMethod,
-        couponCode: appliedCoupon ? couponCode : undefined,
       });
 
       // ONLY deduct wallet on verified success!
@@ -115,8 +115,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({ charger, onClose, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative overflow-hidden text-slate-900 dark:text-white">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full max-h-[90vh] my-6 p-6 shadow-2xl relative overflow-y-auto text-slate-900 dark:text-white space-y-4">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -236,59 +236,69 @@ export const BookingModal: React.FC<BookingModalProps> = ({ charger, onClose, on
             {/* Credit / Debit Card Form Details */}
             {paymentMethod === 'STRIPE' && (
               <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-3 text-xs mb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-1">
                   <span className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <CreditCard className="w-4 h-4 text-emerald-500" /> Enter Card Details
+                    <CreditCard className="w-4 h-4 text-emerald-500" /> Card Payment Gateway
                   </span>
                   <span className="text-[10px] font-bold text-emerald-500 uppercase">Visa • Mastercard • RuPay</span>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Card Number</label>
-                  <input
-                    type="text"
-                    placeholder="4532 •••• •••• 8849"
-                    maxLength={19}
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-900 dark:text-white"
-                  />
-                </div>
+                {/* Live Digital Card Preview */}
+                <DigitalCreditCard
+                  cardNumber={cardNumber}
+                  cardExpiry={cardExpiry}
+                  cardName={cardName}
+                  cardCvv={cardCvv}
+                />
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="pt-2 space-y-2">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Expiry (MM/YY)</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Card Number</label>
                     <input
                       type="text"
-                      placeholder="12/28"
-                      maxLength={5}
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
+                      placeholder="4532 •••• •••• 8849"
+                      maxLength={19}
+                      value={cardNumber}
+                      onChange={(e) => setCardNumber(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-900 dark:text-white"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">CVV</label>
-                    <input
-                      type="password"
-                      placeholder="•••"
-                      maxLength={4}
-                      value={cardCvv}
-                      onChange={(e) => setCardCvv(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-900 dark:text-white"
-                    />
-                  </div>
-                </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cardholder Name</label>
-                  <input
-                    type="text"
-                    placeholder="Full Name as on Card"
-                    value={cardName}
-                    onChange={(e) => setCardName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
-                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Expiry (MM/YY)</label>
+                      <input
+                        type="text"
+                        placeholder="12/28"
+                        maxLength={5}
+                        value={cardExpiry}
+                        onChange={(e) => setCardExpiry(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">CVV</label>
+                      <input
+                        type="password"
+                        placeholder="•••"
+                        maxLength={4}
+                        value={cardCvv}
+                        onChange={(e) => setCardCvv(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cardholder Name</label>
+                    <input
+                      type="text"
+                      placeholder="Full Name as on Card"
+                      value={cardName}
+                      onChange={(e) => setCardName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
                 </div>
               </div>
             )}
