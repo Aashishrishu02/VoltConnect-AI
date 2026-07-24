@@ -201,22 +201,56 @@ export const ExplorePage: React.FC = () => {
       return;
     }
 
-    // 3. Dynamic OpenStreetMap Nominatim Geocoding API lookup
+    // 3. Dynamic OpenStreetMap Nominatim Geocoding API lookup for ANY location in India
     const timer = setTimeout(async () => {
       try {
-        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}+India&format=json&limit=1`);
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}+India&format=json&limit=1`
+        );
         const geoData = await geoRes.json();
         if (geoData && geoData.length > 0) {
           const lat = parseFloat(geoData[0].lat);
           const lon = parseFloat(geoData[0].lon);
-          setSelectedCharger(null);
+          const displayName = geoData[0].display_name || searchQuery;
+          const locationName = searchQuery.charAt(0).toUpperCase() + searchQuery.slice(1);
+
+          // Create dynamic EV Charger Station at exact searched location
+          const searchedCharger: Charger = {
+            id: `c_geo_${Date.now()}`,
+            title: `${locationName} 120kW Ultra-Fast CCS2 Hub`,
+            description: `On-demand 120kW DC fast charging station located at ${displayName.slice(0, 80)}.`,
+            address: displayName.split(',')[0],
+            city: locationName,
+            state: 'India',
+            zipCode: '560001',
+            latitude: lat,
+            longitude: lon,
+            pricePerHour: 140,
+            powerKw: 120,
+            chargerType: 'DC_FAST',
+            connectorType: 'CCS_2',
+            operates24_7: true,
+            isAvailable: true,
+            amenities: ['24/7 Gated Access', 'Fast DC Charging', 'CCTV Security'],
+            images: ['https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&auto=format&fit=crop'],
+            averageRating: 4.9,
+            totalReviews: 24,
+            hostId: 'h_network',
+            host: { id: 'h_network', name: 'VoltConnect Network', rating: 4.9, phone: '+911800123VOLT' },
+          };
+
+          setChargers((prev) => {
+            if (prev.some((c) => c.id === searchedCharger.id)) return prev;
+            return [searchedCharger, ...prev];
+          });
+          setSelectedCharger(searchedCharger);
           setMapCenter([lat, lon]);
-          setMapZoom(9);
+          setMapZoom(14);
         }
       } catch (err) {
         // Fallback
       }
-    }, 600);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [searchQuery, chargers]);
