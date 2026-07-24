@@ -4,6 +4,7 @@ import { ChargerMap } from '../components/map/ChargerMap';
 import { ChargerCard } from '../components/charger/ChargerCard';
 import { ChargerFilters } from '../components/charger/ChargerFilters';
 import { BookingModal } from '../components/booking/BookingModal';
+import { QRCodeModal } from '../components/booking/QRCodeModal';
 import { Charger } from '../types';
 import { Sparkles } from 'lucide-react';
 import api from '../services/api';
@@ -85,6 +86,7 @@ export const ExplorePage: React.FC = () => {
   const [chargers, setChargers] = useState<Charger[]>(sampleIndianChargers);
   const [selectedCharger, setSelectedCharger] = useState<Charger | null>(sampleIndianChargers[0]);
   const [bookingCharger, setBookingCharger] = useState<Charger | null>(null);
+  const [confirmedBooking, setConfirmedBooking] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Filters State
@@ -227,10 +229,19 @@ export const ExplorePage: React.FC = () => {
         <BookingModal
           charger={bookingCharger}
           onClose={() => setBookingCharger(null)}
-          onSuccess={(booking) => {
+          onSuccess={(bookingData) => {
             setBookingCharger(null);
-            alert(`Booking Confirmed! Booking ID: ${booking.id || 'CS-IN-8899'}`);
+            setConfirmedBooking(bookingData);
           }}
+        />
+      )}
+
+      {/* Confirmed Booking Pass Modal */}
+      {confirmedBooking && (
+        <QRCodeModal
+          booking={confirmedBooking}
+          onClose={() => setConfirmedBooking(null)}
+          onRefresh={() => fetchChargers()}
         />
       )}
     </div>
