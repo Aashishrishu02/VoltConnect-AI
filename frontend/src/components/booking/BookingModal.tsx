@@ -49,23 +49,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({ charger, onClose, on
     setLoading(true);
     setError('');
 
+    // 1. Balance Pre-Check for Wallet Payment
+    const currentBalance = user?.wallet?.balance ?? 2500;
+    if (paymentMethod === 'WALLET' && currentBalance < finalPrice) {
+      setError(`Insufficient wallet balance (₹${currentBalance.toFixed(0)}). Required: ₹${finalPrice.toFixed(0)}. Please add funds.`);
+      setLoading(false);
+      return;
+    }
+
     const start = new Date(startTime);
     const end = new Date(start.getTime() + durationHours * 3600000);
-
-    const bookingPayload = {
-      id: `bk_${Date.now()}`,
-      chargerId: charger.id,
-      chargerTitle: charger.title,
-      startTime: start.toISOString(),
-      endTime: end.toISOString(),
-      totalHours: durationHours,
-      totalPrice: finalPrice,
-      paymentMethod,
-      status: 'CONFIRMED',
-      qrCode: `CHARGE-${charger.id.slice(0, 4)}-${Date.now().toString().slice(-6)}`,
-      createdAt: new Date().toISOString(),
-      charger,
-    };
 
     try {
       const res = await api.post('/bookings', {
@@ -76,20 +69,43 @@ export const BookingModal: React.FC<BookingModalProps> = ({ charger, onClose, on
         couponCode: appliedCoupon ? couponCode : undefined,
       });
 
+      // ONLY deduct wallet on verified success!
       if (paymentMethod === 'WALLET' && user?.wallet) {
-        updateUserWallet((user.wallet.balance || 2500) - finalPrice);
+        updateUserWallet(Math.max(0, currentBalance - finalPrice));
       }
 
       setLoading(false);
       onSuccess(res.data);
     } catch (err: any) {
-      // Clean Fallback for local state / offline backend
-      if (paymentMethod === 'WALLET' && user?.wallet) {
-        updateUserWallet(Math.max(0, (user.wallet.balance || 2500) - finalPrice));
-      }
-
       setLoading(false);
-      onSuccess(bookingPayload);
+      const serverErr = err.response?.data?.error;
+
+      // If backend offline, allow client-side demo booking ONLY if balance is sufficient
+      if (!err.response) {
+        if (paymentMethod === 'WALLET' && user?.wallet) {
+          updateUserWallet(Math.max(0, currentBalance - finalPrice));
+        }
+
+        const bookingPayload = {
+          id: `bk_${Date.now()}`,
+          chargerId: charger.id,
+          chargerTitle: charger.title,
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
+          totalHours: durationHours,
+          totalPrice: finalPrice,
+          paymentMethod,
+          status: 'CONFIRMED',
+          qrCode: `CHARGE-${charger.id.slice(0, 4)}-${Date.now().toString().slice(-6)}`,
+          createdAt: new Date().toISOString(),
+          charger,
+        };
+
+        onSuccess(bookingPayload);
+      } else {
+        // DO NOT deduct money on server error!
+        setError(serverErr || 'Transaction failed. No amount was deducted from your wallet.');
+      }
     }
   };
 
