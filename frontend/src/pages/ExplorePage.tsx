@@ -9,6 +9,50 @@ import { Charger } from '../types';
 import { Sparkles } from 'lucide-react';
 import api from '../services/api';
 
+const indianStateCoordinates: Record<string, [number, number]> = {
+  maharashtra: [19.7515, 75.7139],
+  mumbai: [19.0760, 72.8777],
+  pune: [18.5204, 73.8567],
+  nagpur: [21.1458, 79.0882],
+  delhi: [28.6139, 77.2090],
+  ncr: [28.6139, 77.2090],
+  haryana: [29.0588, 76.0856],
+  gurugram: [28.4595, 77.0266],
+  gurgaon: [28.4595, 77.0266],
+  karnataka: [15.3173, 75.7139],
+  bengaluru: [12.9716, 77.5946],
+  bangalore: [12.9716, 77.5946],
+  mysuru: [12.2958, 76.6394],
+  mysore: [12.2958, 76.6394],
+  rajasthan: [27.0238, 74.2179],
+  jaipur: [26.9124, 75.7873],
+  udaipur: [24.5854, 73.7125],
+  gujarat: [22.2587, 71.1924],
+  ahmedabad: [23.0225, 72.5714],
+  surat: [21.1702, 72.8311],
+  vadodara: [22.3072, 73.1812],
+  tamilnadu: [11.1271, 78.6569],
+  chennai: [13.0827, 80.2707],
+  coimbatore: [11.0168, 76.9558],
+  telangana: [18.1124, 79.0193],
+  hyderabad: [17.3850, 78.4867],
+  kerala: [10.8505, 76.2711],
+  kochi: [9.9312, 76.2673],
+  thiruvananthapuram: [8.5241, 76.9366],
+  westbengal: [22.9868, 87.8550],
+  kolkata: [22.5726, 88.3639],
+  uttarpradesh: [26.8467, 80.9462],
+  noida: [28.5355, 77.3910],
+  lucknow: [26.8467, 80.9462],
+  goa: [15.2993, 74.1240],
+  panaji: [15.4909, 73.8278],
+  punjab: [31.1471, 75.3412],
+  chandigarh: [30.7333, 76.7794],
+  madhyapradesh: [22.9734, 78.6569],
+  indore: [22.7196, 75.8577],
+  bhopal: [23.2599, 77.4126],
+};
+
 const sampleIndianChargers: Charger[] = [
   {
     id: 'c_bengaluru_1',
@@ -85,6 +129,8 @@ export const ExplorePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [chargers, setChargers] = useState<Charger[]>(sampleIndianChargers);
   const [selectedCharger, setSelectedCharger] = useState<Charger | null>(sampleIndianChargers[0]);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([20.5937, 78.9629]);
+  const [mapZoom, setMapZoom] = useState<number>(5);
   const [bookingCharger, setBookingCharger] = useState<Charger | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
@@ -111,14 +157,9 @@ export const ExplorePage: React.FC = () => {
       });
       if (res.data && res.data.length > 0) {
         setChargers(res.data);
-        setSelectedCharger(res.data[0]);
-      } else {
-        setChargers(sampleIndianChargers);
-        setSelectedCharger(sampleIndianChargers[0]);
       }
     } catch (err) {
       setChargers(sampleIndianChargers);
-      setSelectedCharger(sampleIndianChargers[0]);
     } finally {
       setLoading(false);
     }
@@ -128,17 +169,79 @@ export const ExplorePage: React.FC = () => {
     fetchChargers();
   }, [searchQuery, selectedType, selectedConnector, maxPrice, onlyAvailable]);
 
+  // Handle Dynamic Geocoding and Map Panning when searchQuery changes
   useEffect(() => {
-    if (filteredChargers.length > 0) {
-      setSelectedCharger(filteredChargers[0]);
+    const q = searchQuery.toLowerCase().replace(/\s+/g, '').trim();
+    if (!q) {
+      setMapCenter([20.5937, 78.9629]);
+      setMapZoom(5);
+      return;
     }
-  }, [searchQuery]);
+
+    // 1. Check if matching chargers exist
+    const matched = chargers.filter((c) => {
+      const cityMatch = (c.city || '').toLowerCase().includes(q);
+      const stateMatch = (c.state || '').toLowerCase().includes(q);
+      const titleMatch = (c.title || '').toLowerCase().includes(q);
+      return cityMatch || stateMatch || titleMatch;
+    });
+
+    if (matched.length > 0) {
+      setSelectedCharger(matched[0]);
+      setMapCenter([matched[0].latitude, matched[0].longitude]);
+      setMapZoom(13);
+      return;
+    }
+
+    // 2. Check Indian State & Metro Geocoder Dictionary
+    if (indianStateCoordinates[q]) {
+      setSelectedCharger(null);
+      setMapCenter(indianStateCoordinates[q]);
+      setMapZoom(8);
+      return;
+    }
+
+    // 3. Dynamic OpenStreetMap Nominatim Geocoding API lookup
+    const timer = setTimeout(async () => {
+      try {
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}+India&format=json&limit=1`);
+        const geoData = await geoRes.json();
+        if (geoData && geoData.length > 0) {
+          const lat = parseFloat(geoData[0].lat);
+          const lon = parseFloat(geoData[0].lon);
+          setSelectedCharger(null);
+          setMapCenter([lat, lon]);
+          setMapZoom(9);
+        }
+      } catch (err) {
+        // Fallback
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, chargers]);
+
+  const filteredChargers = chargers.filter((c) => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesCity = (c.city || '').toLowerCase().includes(q);
+      const matchesTitle = (c.title || '').toLowerCase().includes(q);
+      const matchesAddress = (c.address || '').toLowerCase().includes(q);
+      const matchesState = (c.state || '').toLowerCase().includes(q);
+      if (!matchesCity && !matchesTitle && !matchesAddress && !matchesState) return false;
+    }
+    if (selectedType && c.chargerType !== selectedType) return false;
+    if (selectedConnector && c.connectorType !== selectedConnector) return false;
+    if (c.pricePerHour > maxPrice) return false;
+    if (onlyAvailable && !c.isAvailable) return false;
+    return true;
+  });
 
   const handleAIRank = async () => {
     try {
       const res = await api.post('/ai/recommend', {
-        userLat: 12.9716,
-        userLng: 77.5946,
+        userLat: mapCenter[0],
+        userLng: mapCenter[1],
         chargers,
       });
 
@@ -160,24 +263,8 @@ export const ExplorePage: React.FC = () => {
     }
   };
 
-  const filteredChargers = chargers.filter((c) => {
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const matchesCity = (c.city || '').toLowerCase().includes(q);
-      const matchesTitle = (c.title || '').toLowerCase().includes(q);
-      const matchesAddress = (c.address || '').toLowerCase().includes(q);
-      const matchesState = (c.state || '').toLowerCase().includes(q);
-      if (!matchesCity && !matchesTitle && !matchesAddress && !matchesState) return false;
-    }
-    if (selectedType && c.chargerType !== selectedType) return false;
-    if (selectedConnector && c.connectorType !== selectedConnector) return false;
-    if (c.pricePerHour > maxPrice) return false;
-    if (onlyAvailable && !c.isAvailable) return false;
-    return true;
-  });
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4 text-slate-900 dark:text-white">
       {/* Top Filter Bar */}
       <ChargerFilters
         searchQuery={searchQuery}
@@ -202,6 +289,7 @@ export const ExplorePage: React.FC = () => {
         </div>
 
         <button
+          type="button"
           onClick={handleAIRank}
           className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 border transition-all ${
             aiRanked
@@ -221,9 +309,13 @@ export const ExplorePage: React.FC = () => {
           <ChargerMap
             chargers={filteredChargers}
             selectedCharger={selectedCharger}
-            onSelectCharger={(c) => setSelectedCharger(c)}
-            center={selectedCharger ? [selectedCharger.latitude, selectedCharger.longitude] : [20.5937, 78.9629]}
-            zoom={selectedCharger ? 13 : 5}
+            onSelectCharger={(c) => {
+              setSelectedCharger(c);
+              setMapCenter([c.latitude, c.longitude]);
+              setMapZoom(13);
+            }}
+            center={mapCenter}
+            zoom={mapZoom}
           />
         </div>
 
@@ -249,7 +341,11 @@ export const ExplorePage: React.FC = () => {
               <ChargerCard
                 key={c.id}
                 charger={c}
-                onSelect={(charger) => setSelectedCharger(charger)}
+                onSelect={(charger) => {
+                  setSelectedCharger(charger);
+                  setMapCenter([charger.latitude, charger.longitude]);
+                  setMapZoom(13);
+                }}
                 onBookNow={(charger) => setBookingCharger(charger)}
               />
             ))
