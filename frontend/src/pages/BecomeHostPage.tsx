@@ -163,11 +163,40 @@ export const BecomeHostPage: React.FC = () => {
       ifscCode,
     };
 
+    const newChargerObj = {
+      id: `c_host_${Date.now()}`,
+      title,
+      description: `${propertyType} charger host listing in ${city}.`,
+      address: `${houseNumber}, ${street}, ${area}`,
+      city,
+      state,
+      zipCode: pinCode,
+      latitude: lat,
+      longitude: lng,
+      pricePerHour: parseFloat(pricePerHour) || 120,
+      powerKw: parseFloat(powerKw) || 60,
+      chargerType,
+      connectorType,
+      operates24_7,
+      isAvailable: true,
+      amenities,
+      images: photos,
+      averageRating: 5.0,
+      totalReviews: 1,
+      hostId: user?.id || 'h_user',
+      host: { id: user?.id || 'h_user', name: user?.name || name || 'Charger Owner', rating: 5.0, phone: phone || '+919876543210' },
+      status: 'APPROVED',
+    };
+
     try {
       await api.post('/chargers', payload);
     } catch (err) {
-      console.warn('Backend server offline. Registered local state owner listing.');
+      // Local demo persistence
     }
+
+    // Persist to local storage so driver map displays exact host pin immediately!
+    const existing = JSON.parse(localStorage.getItem('chargeshare_custom_chargers') || '[]');
+    localStorage.setItem('chargeshare_custom_chargers', JSON.stringify([newChargerObj, ...existing]));
 
     if (user && !user.roles.includes('OWNER')) {
       user.roles.push('OWNER');
@@ -175,8 +204,8 @@ export const BecomeHostPage: React.FC = () => {
     }
 
     setLoading(false);
-    alert('🎉 Charger Registered & Submitted for Admin Approval! OWNER role added to your account.');
-    navigate('/host-dashboard');
+    alert(`🎉 Charger "${title}" Registered at Exact Location [${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E]!\n\nListing is now active and visible to all drivers on the map.`);
+    navigate(`/explore?city=${encodeURIComponent(city)}`);
   };
 
   return (

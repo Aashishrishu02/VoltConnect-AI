@@ -145,6 +145,8 @@ export const ExplorePage: React.FC = () => {
 
   const fetchChargers = async () => {
     setLoading(true);
+    const customList = JSON.parse(localStorage.getItem('chargeshare_custom_chargers') || '[]');
+
     try {
       const res = await api.get('/chargers/search', {
         params: {
@@ -156,10 +158,12 @@ export const ExplorePage: React.FC = () => {
         },
       });
       if (res.data && res.data.length > 0) {
-        setChargers(res.data);
+        setChargers([...customList, ...res.data]);
+      } else {
+        setChargers([...customList, ...sampleIndianChargers]);
       }
     } catch (err) {
-      setChargers(sampleIndianChargers);
+      setChargers([...customList, ...sampleIndianChargers]);
     } finally {
       setLoading(false);
     }
