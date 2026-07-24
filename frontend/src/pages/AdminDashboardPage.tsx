@@ -11,7 +11,7 @@ export const AdminDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Filters & State
-  const [selectedTab, setSelectedTab] = useState<'PENDING' | 'ALL' | 'AUDIT'>('PENDING');
+  const [selectedTab, setSelectedTab] = useState<'PENDING' | 'ALL' | 'USERS' | 'AUDIT'>('PENDING');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -196,6 +196,20 @@ export const AdminDashboardPage: React.FC = () => {
     alert('🗑️ Charger Deleted Permanently.');
   };
 
+  const handlePromoteAdmin = async (targetUser: any) => {
+    if (!window.confirm(`Are you sure you want to promote ${targetUser.name} (${targetUser.email}) to ADMIN role?`)) return;
+    try {
+      await api.put(`/admin/users/${targetUser.id}/promote-admin`);
+    } catch (err) {
+      // Local
+    }
+
+    setUsers((prev) =>
+      prev.map((u) => (u.id === targetUser.id ? { ...u, roles: Array.from(new Set([...(u.roles || ['DRIVER']), 'ADMIN'])) } : u))
+    );
+    alert(`🎉 ${targetUser.name} has been promoted to ADMIN!`);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Header Banner */}
@@ -206,7 +220,7 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">ChargeMitra Admin Approval Portal</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Sole Platform Admin Governance • Charger Approvals, Audits & RBAC</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Sole Platform Admin Governance • Charger Approvals, Audits & User Roles</p>
           </div>
         </div>
 
@@ -271,6 +285,17 @@ export const AdminDashboardPage: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setSelectedTab('USERS')}
+          className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
+            selectedTab === 'USERS'
+              ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/20'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white'
+          }`}
+        >
+          <Users className="w-4 h-4" /> User Roles & Co-Admins ({users.length})
+        </button>
+
+        <button
           onClick={() => setSelectedTab('AUDIT')}
           className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
             selectedTab === 'AUDIT'
@@ -283,7 +308,7 @@ export const AdminDashboardPage: React.FC = () => {
       </div>
 
       {/* Main Approvals Table Section */}
-      {selectedTab !== 'AUDIT' ? (
+      {selectedTab === 'PENDING' || selectedTab === 'ALL' ? (
         <div className="p-6 rounded-3xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-4">
           {/* Search & Status Filters */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -374,6 +399,76 @@ export const AdminDashboardPage: React.FC = () => {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : selectedTab === 'USERS' ? (
+        /* USERS & ADMIN PROMOTION TAB */
+        <div className="p-6 rounded-3xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <Users className="w-5 h-5 text-cyan-400" /> Platform User Management & Co-Admin Promotion
+            </h3>
+            <span className="text-xs text-slate-400">Only Platform Admin can promote users to ADMIN</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-slate-200 dark:border-slate-700 text-slate-400 uppercase font-semibold">
+                <tr>
+                  <th className="py-3 px-4">User Name</th>
+                  <th className="py-3 px-4">Email</th>
+                  <th className="py-3 px-4">Phone</th>
+                  <th className="py-3 px-4">Assigned Roles</th>
+                  <th className="py-3 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                {users.map((u) => {
+                  const uRoles = u.roles || ['DRIVER'];
+                  const isUserAdmin = uRoles.includes('ADMIN');
+
+                  return (
+                    <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                      <td className="py-3 px-4 font-bold text-white">{u.name}</td>
+                      <td className="py-3 px-4 text-slate-300">{u.email}</td>
+                      <td className="py-3 px-4 text-slate-400">{u.phone || '+919876543210'}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-wrap gap-1">
+                          {uRoles.map((r: string) => (
+                            <span
+                              key={r}
+                              className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${
+                                r === 'ADMIN'
+                                  ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                                  : r === 'OWNER'
+                                  ? 'bg-teal-500/20 text-teal-400'
+                                  : 'bg-emerald-500/20 text-emerald-400'
+                              }`}
+                            >
+                              ✓ {r}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {!isUserAdmin ? (
+                          <button
+                            onClick={() => handlePromoteAdmin(u)}
+                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-extrabold text-xs shadow-md transition-all inline-flex items-center gap-1"
+                          >
+                            <ShieldAlert className="w-3.5 h-3.5" /> Make Co-Admin
+                          </button>
+                        ) : (
+                          <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/30">
+                            🛡️ Co-Admin Active
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

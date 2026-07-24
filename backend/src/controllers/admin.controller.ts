@@ -245,3 +245,49 @@ export async function getAdminAuditLogs(req: AuthRequest, res: Response, next: N
     next(err);
   }
 }
+
+export async function getAllUsersAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, name: true, email: true, phone: true, roles: true, trustScore: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(users);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function promoteUserToAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const adminId = req.user?.userId;
+    const { userId } = req.params;
+
+    const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!targetUser) return res.status(404).json({ error: 'User not found' });
+
+    if (!targetUser.roles.includes('ADMIN')) {
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { roles: { push: 'ADMIN' } },
+        select: { id: true, name: true, email: true, roles: true },
+      });
+
+      // Audit log
+      await prisma.adminLog.create({
+        data: {
+          adminId: adminId!,
+          action: 'PROMOTE_ADMIN',
+          targetResource: userId,
+          details: `Promoted ${targetUser.name} (${targetUser.email}) to ADMIN role`,
+        },
+      });
+
+      return res.json({ message: `Successfully promoted ${targetUser.name} to ADMIN!`, user: updatedUser });
+    }
+
+    res.json({ message: 'User is already an ADMIN.', user: targetUser });
+  } catch (err) {
+    next(err);
+  }
+}

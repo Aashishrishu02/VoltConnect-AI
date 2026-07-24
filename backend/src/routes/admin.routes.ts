@@ -9,6 +9,8 @@ import {
   suspendChargerAdmin,
   deleteChargerAdmin,
   getAdminAuditLogs,
+  getAllUsersAdmin,
+  promoteUserToAdmin,
 } from '../controllers/admin.controller';
 
 const router = Router();
@@ -18,6 +20,8 @@ router.use(authenticate, authorizeRoles('ADMIN'));
 
 router.get('/stats', getAdminStats);
 router.get('/approvals', getPendingApprovals);
+router.get('/users', getAllUsersAdmin);
+router.put('/users/:userId/promote-admin', promoteUserToAdmin);
 router.put('/chargers/:id/approve', approveChargerAdmin);
 router.put('/chargers/:id/reject', rejectChargerAdmin);
 router.put('/chargers/:id/request-info', requestMoreInfoAdmin);
