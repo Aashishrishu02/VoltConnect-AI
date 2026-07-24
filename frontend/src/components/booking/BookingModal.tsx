@@ -22,6 +22,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({ charger, onClose, on
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ discountPercent: number; discountAmount: number } | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'WALLET' | 'STRIPE' | 'RAZORPAY'>('WALLET');
+  const [cardNumber, setCardNumber] = useState('4532 8899 4411 2026');
+  const [cardExpiry, setCardExpiry] = useState('12/28');
+  const [cardCvv, setCardCvv] = useState('884');
+  const [cardName, setCardName] = useState(user?.name || 'Aashish Kumar');
+  const [selectedUpiApp, setSelectedUpiApp] = useState('GPay');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -205,13 +210,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({ charger, onClose, on
           {/* Payment Method Selector */}
           <div>
             <label className="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
-              Payment Method
+              Select Payment Method
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 mb-3">
               {[
                 { id: 'WALLET', label: `Wallet (₹${user?.wallet?.balance?.toFixed(0) || '2500'})` },
-                { id: 'RAZORPAY', label: 'Razorpay / UPI' },
-                { id: 'STRIPE', label: 'Credit/Debit Card' },
+                { id: 'STRIPE', label: '💳 Credit/Debit Card' },
+                { id: 'RAZORPAY', label: '📱 Razorpay / UPI' },
               ].map((method) => (
                 <button
                   key={method.id}
@@ -227,6 +232,89 @@ export const BookingModal: React.FC<BookingModalProps> = ({ charger, onClose, on
                 </button>
               ))}
             </div>
+
+            {/* Credit / Debit Card Form Details */}
+            {paymentMethod === 'STRIPE' && (
+              <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-3 text-xs mb-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <CreditCard className="w-4 h-4 text-emerald-500" /> Enter Card Details
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-500 uppercase">Visa • Mastercard • RuPay</span>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Card Number</label>
+                  <input
+                    type="text"
+                    placeholder="4532 •••• •••• 8849"
+                    maxLength={19}
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Expiry (MM/YY)</label>
+                    <input
+                      type="text"
+                      placeholder="12/28"
+                      maxLength={5}
+                      value={cardExpiry}
+                      onChange={(e) => setCardExpiry(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">CVV</label>
+                    <input
+                      type="password"
+                      placeholder="•••"
+                      maxLength={4}
+                      value={cardCvv}
+                      onChange={(e) => setCardCvv(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cardholder Name</label>
+                  <input
+                    type="text"
+                    placeholder="Full Name as on Card"
+                    value={cardName}
+                    onChange={(e) => setCardName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* UPI App Options */}
+            {paymentMethod === 'RAZORPAY' && (
+              <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2 text-xs mb-3">
+                <label className="block font-bold text-slate-400">Choose UPI Payment App:</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {['GPay', 'PhonePe', 'Paytm', 'BHIM'].map((app) => (
+                    <button
+                      type="button"
+                      key={app}
+                      onClick={() => setSelectedUpiApp(app)}
+                      className={`py-2 rounded-xl font-bold border text-center transition-all ${
+                        selectedUpiApp === app
+                          ? 'bg-emerald-500 text-white border-emerald-500'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      {app}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Total Breakdown */}
