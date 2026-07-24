@@ -119,6 +119,7 @@ export interface Booking {
   checkOutTime?: string;
   charger?: Charger;
   payment?: Payment;
+  paymentMethod?: string;
   review?: Review;
   createdAt: string;
 }

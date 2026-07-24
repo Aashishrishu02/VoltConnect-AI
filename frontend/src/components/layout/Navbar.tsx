@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Zap, MapPin, Navigation, Wallet, Sun, Moon, User as UserIcon, LogOut, ShieldAlert, PlusCircle, LayoutDashboard, Globe, AlertTriangle, ChevronDown, Home, Car, Wrench, Bot } from 'lucide-react';
+import { Zap, MapPin, Navigation, Wallet, Sun, Moon, User as UserIcon, LogOut, ShieldAlert, PlusCircle, LayoutDashboard, Globe, AlertTriangle, ChevronDown, Home, Car, Wrench, Bot, Calendar } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -300,6 +300,15 @@ export const Navbar: React.FC<{ onOpenAuth: () => void }> = ({ onOpenAuth }) => 
                     </div>
 
                     <div className="py-1">
+                      <Link
+                        to="/my-bookings"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+                      >
+                        <Calendar className="w-4 h-4 text-emerald-500" />
+                        My Reserved Slots & QR Passes
+                      </Link>
+
                       <Link
                         to="/wallet"
                         onClick={() => setDropdownOpen(false)}

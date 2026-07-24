@@ -13,6 +13,7 @@ import { BecomeHostPage } from './pages/BecomeHostPage';
 import { HostDashboardPage } from './pages/HostDashboardPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { WalletPage } from './pages/WalletPage';
+import { MyBookingsPage } from './pages/MyBookingsPage';
 import { AIChatPage } from './pages/AIChatPage';
 import { AuthModal } from './pages/AuthPages';
 
@@ -38,6 +39,7 @@ export function App() {
                     <Route path="/host-dashboard" element={<HostDashboardPage />} />
                     <Route path="/admin-dashboard" element={<AdminDashboardPage />} />
                     <Route path="/wallet" element={<WalletPage />} />
+                    <Route path="/my-bookings" element={<MyBookingsPage />} />
                   </Routes>
                 </main>
 
