@@ -2,10 +2,10 @@
   "name": "chargeshare-backend",
   "version": "1.0.0",
   "description": "Node.js Express TypeScript Backend for ChargeShare P2P EV Charger Network",
-  "main": "dist/src/server.js",
+  "main": "dist/server.js",
   "scripts": {
     "build": "npx prisma generate && tsc",
-    "start": "node dist/src/server.js",
+    "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
