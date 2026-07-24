@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Zap, MapPin, Navigation, ShieldCheck, Award, Leaf, Cpu, BatteryCharging, Wrench, Sparkles, ArrowRight, Star, Heart, CheckCircle2 } from 'lucide-react';
 import { Calculators } from '../components/common/Calculators';
 import { GreenRewards } from '../components/common/GreenRewards';
@@ -7,6 +7,17 @@ import { useLanguage } from '../context/LanguageContext';
 
 export const HomePage: React.FC<{ onOpenAuth: () => void }> = ({ onOpenAuth }) => {
   const { t } = useLanguage();
+  const [searchCity, setSearchCity] = React.useState('');
+  const navigate = useNavigate();
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchCity.trim()) {
+      navigate(`/explore?city=${encodeURIComponent(searchCity.trim())}`);
+    } else {
+      navigate('/explore');
+    }
+  };
 
   return (
     <div className="space-y-16 pb-16">
@@ -31,8 +42,31 @@ export const HomePage: React.FC<{ onOpenAuth: () => void }> = ({ onOpenAuth }) =
             AI-powered P2P charging marketplace, smart route optimizer, virtual queue management, emergency highway assistance & green rewards for EV drivers across India.
           </p>
 
+          {/* Interactive Search Bar */}
+          <form onSubmit={handleSearchSubmit} className="max-w-2xl mx-auto pt-2">
+            <div className="flex flex-col sm:flex-row items-center gap-2 p-2 rounded-3xl bg-slate-800/90 border border-slate-700 shadow-2xl backdrop-blur-md">
+              <div className="flex items-center gap-3 px-4 py-2 flex-1 w-full">
+                <MapPin className="w-5 h-5 text-emerald-400 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Enter City or Station Name (e.g. Bengaluru, Mumbai, Gurugram)..."
+                  value={searchCity}
+                  onChange={(e) => setSearchCity(e.target.value)}
+                  className="w-full bg-transparent text-sm text-white placeholder-slate-400 outline-none font-medium"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2 shrink-0"
+              >
+                <MapPin className="w-4 h-4" /> Find EV Chargers
+              </button>
+            </div>
+          </form>
+
           {/* Quick CTA Buttons */}
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Link
               to="/explore"
               className="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-extrabold text-sm shadow-xl shadow-emerald-500/25 flex items-center gap-2 transition-all hover:scale-105"

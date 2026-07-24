@@ -154,6 +154,22 @@ export const ExplorePage: React.FC = () => {
     }
   };
 
+  const filteredChargers = chargers.filter((c) => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesCity = (c.city || '').toLowerCase().includes(q);
+      const matchesTitle = (c.title || '').toLowerCase().includes(q);
+      const matchesAddress = (c.address || '').toLowerCase().includes(q);
+      const matchesState = (c.state || '').toLowerCase().includes(q);
+      if (!matchesCity && !matchesTitle && !matchesAddress && !matchesState) return false;
+    }
+    if (selectedType && c.chargerType !== selectedType) return false;
+    if (selectedConnector && c.connectorType !== selectedConnector) return false;
+    if (c.pricePerHour > maxPrice) return false;
+    if (onlyAvailable && !c.isAvailable) return false;
+    return true;
+  });
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
       {/* Top Filter Bar */}
@@ -174,7 +190,7 @@ export const ExplorePage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            Available EV Chargers in India ({chargers.length})
+            Available EV Chargers in India ({filteredChargers.length})
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">Click on any marker or card to view details</p>
         </div>
@@ -197,7 +213,7 @@ export const ExplorePage: React.FC = () => {
         {/* Left Interactive Map */}
         <div className="lg:col-span-7 h-[450px] lg:h-full rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-lg">
           <ChargerMap
-            chargers={chargers}
+            chargers={filteredChargers}
             selectedCharger={selectedCharger}
             onSelectCharger={(c) => setSelectedCharger(c)}
             center={selectedCharger ? [selectedCharger.latitude, selectedCharger.longitude] : [20.5937, 78.9629]}
@@ -211,8 +227,19 @@ export const ExplorePage: React.FC = () => {
             <div className="flex items-center justify-center h-64">
               <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
             </div>
+          ) : filteredChargers.length === 0 ? (
+            <div className="p-8 text-center bg-white dark:bg-slate-800/80 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-3">
+              <p className="text-sm font-bold text-slate-400">No stations match "{searchQuery}"</p>
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="px-4 py-2 rounded-xl bg-emerald-500 text-white font-bold text-xs"
+              >
+                Clear Search Filter
+              </button>
+            </div>
           ) : (
-            chargers.map((c) => (
+            filteredChargers.map((c) => (
               <ChargerCard
                 key={c.id}
                 charger={c}
