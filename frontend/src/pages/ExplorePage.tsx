@@ -7,7 +7,7 @@ import { BookingModal } from '../components/booking/BookingModal';
 import { QRCodeModal } from '../components/booking/QRCodeModal';
 import { ChargerDetailsModal } from '../components/charger/ChargerDetailsModal';
 import { Charger } from '../types';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, MapPin } from 'lucide-react';
 import api from '../services/api';
 
 const indianStateCoordinates: Record<string, [number, number]> = {
@@ -144,6 +144,40 @@ export const ExplorePage: React.FC = () => {
   const [maxPrice, setMaxPrice] = useState(250);
   const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [aiRanked, setAiRanked] = useState(false);
+
+  const handleAutoDetectLocation = () => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const userLat = pos.coords.latitude;
+          const userLng = pos.coords.longitude;
+
+          setMapCenter([userLat, userLng]);
+          setMapZoom(13);
+
+          // Reverse geocode user location to set city & filter chargers
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}`)
+            .then((res) => res.json())
+            .then((data) => {
+              const cityName = data.address?.city || data.address?.town || data.address?.state_district || 'Bengaluru';
+              setSearchQuery(cityName);
+            })
+            .catch(() => {});
+        },
+        (err) => {
+          setMapCenter([12.9716, 77.5946]);
+          setMapZoom(12);
+        },
+        { timeout: 5000, enableHighAccuracy: true }
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (!searchParams.get('city')) {
+      handleAutoDetectLocation();
+    }
+  }, []);
 
   const fetchChargers = async () => {
     setLoading(true);
@@ -328,18 +362,29 @@ export const ExplorePage: React.FC = () => {
           <p className="text-xs text-slate-500 dark:text-slate-400">Click on any marker or card to view details</p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleAIRank}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 border transition-all ${
-            aiRanked
-              ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/20'
-              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-emerald-500 hover:border-emerald-500'
-          }`}
-        >
-          <Sparkles className="w-4 h-4 fill-current" />
-          {aiRanked ? 'AI Ranked!' : 'Rank with AI Engine'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleAutoDetectLocation}
+            className="px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-emerald-500 hover:border-emerald-500 transition-all shadow-sm"
+          >
+            <MapPin className="w-4 h-4 text-emerald-500" />
+            Auto-Detect My GPS
+          </button>
+
+          <button
+            type="button"
+            onClick={handleAIRank}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 border transition-all ${
+              aiRanked
+                ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/20'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-emerald-500 hover:border-emerald-500'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 fill-current" />
+            {aiRanked ? 'AI Ranked!' : 'Rank with AI Engine'}
+          </button>
+        </div>
       </div>
 
       {/* Main Split Screen Container */}
