@@ -170,10 +170,16 @@ export interface AIRecommendation {
 }
 
 export interface EVRoutePlan {
+  startCity?: string;
+  destCity?: string;
+  vehicleModel?: string;
   totalDistanceKm: number;
   estimatedTripMin: number;
-  initialBattery: number;
+  drivingTimeMin?: number;
+  chargingTimeMin?: number;
+  initialBattery?: number;
   stopsNeeded: number;
-  recommendedChargers: Charger[];
+  recommendedChargers?: Charger[];
+  recommendedStops?: any[];
   arrivalBattery: number;
 }

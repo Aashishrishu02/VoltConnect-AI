@@ -75,3 +75,117 @@ export async function getSmartRecommendations(req: Request, res: Response, next:
     next(err);
   }
 }
+
+export async function planEVRoute(req: Request, res: Response, next: NextFunction) {
+  try {
+    const {
+      startCity = 'Bengaluru',
+      destCity = 'Mysuru',
+      vehicleModel = 'Tata Nexon EV Max (437 km)',
+      batteryPercent = 35,
+      maxRangeKm = 350,
+    } = req.body;
+
+    // Calculate intelligent highway trip metrics
+    const routeDatabase: Record<string, { distanceKm: number; defaultStops: any[] }> = {
+      bengaluru_mysuru: {
+        distanceKm: 145,
+        defaultStops: [
+          {
+            stopIndex: 1,
+            name: 'Mandya Expressway 100kW DC Fast Charging Hub',
+            location: 'Mandya Highway Toll Plaza, NH 275',
+            distFromOriginKm: 85,
+            powerKw: 100,
+            connectorType: 'CCS_2',
+            chargeMin: 20,
+            startBatteryPercent: Math.max(12, Math.round(batteryPercent - (85 / maxRangeKm) * 100)),
+            endBatteryPercent: 80,
+            priceEst: '₹180',
+          },
+        ],
+      },
+      delhi_jaipur: {
+        distanceKm: 280,
+        defaultStops: [
+          {
+            stopIndex: 1,
+            name: 'Neemrana 60kW DC Fast Charge Oasis',
+            location: 'Neemrana Food Court, NH 48',
+            distFromOriginKm: 125,
+            powerKw: 60,
+            connectorType: 'CCS_2',
+            chargeMin: 28,
+            startBatteryPercent: Math.max(15, Math.round(batteryPercent - (125 / maxRangeKm) * 100)),
+            endBatteryPercent: 85,
+            priceEst: '₹240',
+          },
+        ],
+      },
+      mumbai_pune: {
+        distanceKm: 150,
+        defaultStops: [
+          {
+            stopIndex: 1,
+            name: 'Lonavala Expressway Supercharge Hub 150kW',
+            location: 'Khalapur Toll Plaza, Mumbai-Pune Expressway',
+            distFromOriginKm: 70,
+            powerKw: 150,
+            connectorType: 'CCS_2',
+            chargeMin: 15,
+            startBatteryPercent: Math.max(18, Math.round(batteryPercent - (70 / maxRangeKm) * 100)),
+            endBatteryPercent: 85,
+            priceEst: '₹210',
+          },
+        ],
+      },
+    };
+
+    const key = `${startCity.toLowerCase().split(',')[0].trim()}_${destCity.toLowerCase().split(',')[0].trim()}`;
+    const routeData = routeDatabase[key] || {
+      distanceKm: 220,
+      defaultStops: [
+        {
+          stopIndex: 1,
+          name: `${startCity.split(',')[0]} Expressway Fast Charger 100kW`,
+          location: `Midway Plaza, Highway NH-44`,
+          distFromOriginKm: 110,
+          powerKw: 100,
+          connectorType: 'CCS_2',
+          chargeMin: 22,
+          startBatteryPercent: Math.max(15, Math.round(batteryPercent - (110 / maxRangeKm) * 100)),
+          endBatteryPercent: 80,
+          priceEst: '₹190',
+        },
+      ],
+    };
+
+    const totalDistanceKm = routeData.distanceKm;
+    const drivingTimeMin = Math.round((totalDistanceKm / 75) * 60);
+    const chargingTimeMin = routeData.defaultStops.reduce((sum, s) => sum + s.chargeMin, 0);
+    const estimatedTripMin = drivingTimeMin + chargingTimeMin;
+
+    const stopsNeeded = batteryPercent < 45 || totalDistanceKm > maxRangeKm * 0.5 ? routeData.defaultStops.length : 0;
+    const recommendedStops = stopsNeeded > 0 ? routeData.defaultStops : [];
+
+    const arrivalBattery = Math.min(
+      95,
+      Math.max(22, Math.round(batteryPercent - (totalDistanceKm / maxRangeKm) * 100 + (stopsNeeded > 0 ? 55 : 0)))
+    );
+
+    res.json({
+      startCity,
+      destCity,
+      vehicleModel,
+      totalDistanceKm,
+      estimatedTripMin,
+      drivingTimeMin,
+      chargingTimeMin,
+      stopsNeeded,
+      arrivalBattery,
+      recommendedStops,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
