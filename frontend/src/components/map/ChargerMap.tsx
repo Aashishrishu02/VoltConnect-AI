@@ -1,5 +1,5 @@
-import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Charger } from '../../types';
 import { Zap, Star } from 'lucide-react';
@@ -10,6 +10,17 @@ interface ChargerMapProps {
   onSelectCharger: (charger: Charger) => void;
   center?: [number, number];
   zoom?: number;
+}
+
+// Helper component to dynamically pan map view when center/selectedCharger updates
+function ChangeView({ center, zoom }: { center?: [number, number]; zoom?: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center && center[0] && center[1]) {
+      map.setView(center, zoom || 13, { animate: true });
+    }
+  }, [center, zoom, map]);
+  return null;
 }
 
 const createCustomIcon = (charger: Charger, isSelected: boolean) => {
@@ -46,17 +57,26 @@ export const ChargerMap: React.FC<ChargerMapProps> = ({
   chargers,
   selectedCharger,
   onSelectCharger,
-  center = [20.5937, 78.9629], // India Center Coordinates
+  center = [20.5937, 78.9629], // India Center
   zoom = 5,
 }) => {
+  const mapCenter: [number, number] = selectedCharger
+    ? [selectedCharger.latitude, selectedCharger.longitude]
+    : chargers.length > 0
+    ? [chargers[0].latitude, chargers[0].longitude]
+    : center;
+
+  const mapZoom = selectedCharger || chargers.length > 0 ? 13 : zoom;
+
   return (
     <div className="w-full h-full min-h-[400px] rounded-2xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 relative">
       <MapContainer
-        center={center}
-        zoom={zoom}
+        center={mapCenter}
+        zoom={mapZoom}
         scrollWheelZoom={true}
         className="w-full h-full z-10"
       >
+        <ChangeView center={mapCenter} zoom={mapZoom} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

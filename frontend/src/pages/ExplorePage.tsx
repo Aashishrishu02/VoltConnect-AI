@@ -128,6 +128,12 @@ export const ExplorePage: React.FC = () => {
     fetchChargers();
   }, [searchQuery, selectedType, selectedConnector, maxPrice, onlyAvailable]);
 
+  useEffect(() => {
+    if (filteredChargers.length > 0) {
+      setSelectedCharger(filteredChargers[0]);
+    }
+  }, [searchQuery]);
+
   const handleAIRank = async () => {
     try {
       const res = await api.post('/ai/recommend', {
