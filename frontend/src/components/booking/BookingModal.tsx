@@ -231,6 +231,21 @@ export const BookingModal: React.FC<BookingModalProps> = ({ charger, onClose, on
               ))}
             </div>
 
+            {/* Instant Wallet Payment Info Banner */}
+            {paymentMethod === 'WALLET' && (
+              <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs space-y-1 mb-3">
+                <div className="flex items-center justify-between font-bold text-emerald-400">
+                  <span className="flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 fill-emerald-400" /> 1-Click Instant Wallet Payment
+                  </span>
+                  <span className="text-[10px] uppercase bg-emerald-500/20 px-2 py-0.5 rounded font-extrabold">No QR / Cards Needed</span>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  ₹{finalPrice.toFixed(0)} will be deducted directly from your ChargeMitra wallet (Current: ₹{(user?.wallet?.balance ?? 2500).toFixed(0)} ➔ Remaining: ₹{Math.max(0, (user?.wallet?.balance ?? 2500) - finalPrice).toFixed(0)}).
+                </p>
+              </div>
+            )}
+
             {/* Credit / Debit Card Form Details */}
             {paymentMethod === 'STRIPE' && (
               <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-3 text-xs mb-3">
