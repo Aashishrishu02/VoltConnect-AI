@@ -369,6 +369,42 @@ export const BecomeHostPage: React.FC = () => {
                 className="px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
               />
             </div>
+
+            {/* Exact GPS Pin Coordinates Input */}
+            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold uppercase text-emerald-500 flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4" /> Exact Station Map GPS Pin
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400 font-bold">
+                  {lat.toFixed(4)}° N, {lng.toFixed(4)}° E
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Latitude</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={lat}
+                    onChange={(e) => setLat(parseFloat(e.target.value) || 12.9716)}
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono font-bold text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Longitude</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={lng}
+                    onChange={(e) => setLng(parseFloat(e.target.value) || 77.5946)}
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono font-bold text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-400">This exact GPS pin will be displayed to all drivers on the interactive map.</p>
+            </div>
           </div>
         )}
 
