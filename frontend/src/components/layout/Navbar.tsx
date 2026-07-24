@@ -48,16 +48,16 @@ export const Navbar: React.FC<{ onOpenAuth: () => void }> = ({ onOpenAuth }) => 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform">
-              <Zap className="w-6 h-6 text-white fill-white" />
+          <Link to="/" className="flex items-center gap-2 group shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform shrink-0">
+              <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white fill-white" />
             </div>
             <div className="flex flex-col">
-              <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
+              <span className="font-extrabold text-base sm:text-xl tracking-tight bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent whitespace-nowrap">
                 VoltConnect AI
               </span>
-              <span className="text-[9px] font-bold tracking-widest uppercase text-slate-500 dark:text-slate-400 -mt-1">
-                India's AI EV Mobility Super App
+              <span className="text-[9px] font-extrabold tracking-wider uppercase text-slate-500 dark:text-slate-400 -mt-0.5 hidden md:block whitespace-nowrap">
+                Smart EV Mobility Network
               </span>
             </div>
           </Link>
