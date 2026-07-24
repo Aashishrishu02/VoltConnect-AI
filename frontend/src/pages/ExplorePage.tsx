@@ -5,6 +5,7 @@ import { ChargerCard } from '../components/charger/ChargerCard';
 import { ChargerFilters } from '../components/charger/ChargerFilters';
 import { BookingModal } from '../components/booking/BookingModal';
 import { QRCodeModal } from '../components/booking/QRCodeModal';
+import { ChargerDetailsModal } from '../components/charger/ChargerDetailsModal';
 import { Charger } from '../types';
 import { Sparkles } from 'lucide-react';
 import api from '../services/api';
@@ -129,6 +130,7 @@ export const ExplorePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [chargers, setChargers] = useState<Charger[]>(sampleIndianChargers);
   const [selectedCharger, setSelectedCharger] = useState<Charger | null>(sampleIndianChargers[0]);
+  const [detailModalCharger, setDetailModalCharger] = useState<Charger | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([20.5937, 78.9629]);
   const [mapZoom, setMapZoom] = useState<number>(5);
   const [bookingCharger, setBookingCharger] = useState<Charger | null>(null);
@@ -349,6 +351,7 @@ export const ExplorePage: React.FC = () => {
             selectedCharger={selectedCharger}
             onSelectCharger={(c) => {
               setSelectedCharger(c);
+              setDetailModalCharger(c);
               setMapCenter([c.latitude, c.longitude]);
               setMapZoom(13);
             }}
@@ -381,6 +384,7 @@ export const ExplorePage: React.FC = () => {
                 charger={c}
                 onSelect={(charger) => {
                   setSelectedCharger(charger);
+                  setDetailModalCharger(charger);
                   setMapCenter([charger.latitude, charger.longitude]);
                   setMapZoom(13);
                 }}
@@ -390,6 +394,21 @@ export const ExplorePage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Full Station Details Modal */}
+      {detailModalCharger && (
+        <ChargerDetailsModal
+          charger={detailModalCharger}
+          nearbyChargers={filteredChargers}
+          onClose={() => setDetailModalCharger(null)}
+          onBookNow={(charger) => setBookingCharger(charger)}
+          onSelectNearby={(charger) => {
+            setSelectedCharger(charger);
+            setDetailModalCharger(charger);
+            setMapCenter([charger.latitude, charger.longitude]);
+          }}
+        />
+      )}
 
       {/* Booking Modal */}
       {bookingCharger && (
